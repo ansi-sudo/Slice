@@ -302,6 +302,24 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Create version tag
+        env:
+          GIT_USER: ${{ secrets.GIT_USER_NAME }}
+          GIT_EMAIL: ${{ secrets.GIT_USER_EMAIL }}
+        run: |
+          MOD_VERSION=$(grep "^version=" gradle.properties | cut -d'=' -f2 | tr -d '[:space:]')
+          BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+          if [ "$BRANCH_NAME" = "HEAD" ]; then
+            BRANCH_NAME="${{ github.ref_name }}"
+          fi
+          TAG_NAME="${BRANCH_NAME}/${MOD_VERSION}"
+
+          git config --global user.name "$GIT_USER"
+          git config --global user.email "$GIT_EMAIL"
+          git tag "$TAG_NAME"
+          git push origin "$TAG_NAME"
+          echo "::notice::Tag $TAG_NAME created and pushed successfully"
+
       - name: Clear changelogs
         run: |
           for LOADER in $(echo '${{ needs.prepare.outputs.loaders }}' | jq -r '.[]'); do
