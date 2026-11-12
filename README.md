@@ -30,8 +30,8 @@
 [Click to watch the trailer/demo](https://www.youtube.com/watch?v=kq3pwFCv4ZM)
 
 ## Supported Versions
-> ✅ - Supported, ❌ - Unsupported, 🔍 - Planned / In development
-<br> Minimum loader versions are in the same order as loaders in `Loaders` column <br> `Latest Slice version` doesn't cite the latest ***published*** version. Check the [Modrinth page](https://modrinth.com/mod/slice) for the latest available version.<br> Main development currently resides on version **`26.1.2`**. Why? idk
+> ✅ - Supported, ❌ - Unsupported, 🔍 - Planned / In development, ⭐ - Long-term maintained
+<br> Minimum loader versions are in the same order as the loaders in the `Loaders` column. <br> `Latest Slice version` doesn't refer to the latest ***published*** version. Check the [Modrinth page](https://modrinth.com/mod/slice) for the latest available version.<br> Main development currently resides on version **`26.1.2`**. Why? idk
 
 <table>
     <th>Version</th>
@@ -46,7 +46,7 @@
           <img width="35" src="https://badges.penpow.dev/badges/supported/fabric/cozy-minimal.svg">
         </td>
         <td><code>26.1.2.0-beta</code>, <code>64.0.0</code>, <code>0.18.4</code></td>
-        <td><code>1.0.2</code></td>
+        <td><code>1.1.0</code></td>
     </tr>
     <tr><td>26.1.1</td>  <td>✅</td>
         <td>
@@ -102,7 +102,7 @@
     <tr><td>1.21.4</td> <td>❌</td><td></td><td></td><td></td></tr>
     <tr><td>1.21.3</td> <td>❌</td><td></td><td></td><td></td></tr>
     <tr><td>1.21.2</td> <td>❌</td><td></td><td></td><td></td></tr>
-    <tr><td>1.21.1</td> <td>✅</td>
+    <tr><td>1.21.1</td> <td>⭐</td>
       <td>
         <img width="35" src="https://github.com/intergrav/devins-badges/blob/8494ec1ac495cfb481dc7e458356325510933eb0/assets/cozy-minimal/supported/neoforge_vector.svg?raw=true"> 
         <img width="35" src="https://badges.penpow.dev/badges/supported/forge/cozy-minimal.svg"> 
@@ -214,7 +214,7 @@
 
 ## How to customize/configure
 
-### <img width="20" src="https://github.com/intergrav/devins-badges/blob/8494ec1ac495cfb481dc7e458356325510933eb0/assets/compact-minimal/supported/neoforge_vector.svg?raw=true"> Neoforge
+### <img width="20" src="https://github.com/intergrav/devins-badges/blob/8494ec1ac495cfb481dc7e458356325510933eb0/assets/compact-minimal/supported/neoforge_vector.svg?raw=true"> NeoForge
 NeoForge offers an in-game config menu.
 ```
 Main Menu > Mods > *Select Slice* > Config
@@ -241,6 +241,7 @@ Download [Mod Menu](https://modrinth.com/mod/modmenu) and use their config menu 
 ```
 Main Menu > Mods > *Select Slice* > -Config button next to the name-
 ```
+
 ### <img width="20" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/compact-minimal/supported/quilt_vector.svg"> Quilt
 Download [Mod Menu](https://modrinth.com/mod/modmenu) and use their config menu instead.
 ```
@@ -263,7 +264,6 @@ Feel free to send feedback on the [issues page](https://github.com/ansi-sudo/Sli
     <li><a href="https://www.aseprite.org/">Aseprite</li></a>
   </ul>
 </details>
-
 
 <hr>
 
