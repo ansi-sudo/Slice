@@ -1,9 +1,10 @@
 name: Publish to Modrinth
+
 on:
   workflow_dispatch:
     inputs:
       version_name:
-        description: 'Version Name (e.g., 1.0.0)'
+        description: 'Version Name (e.g., Hotfix, Optimization update)'
         required: true
       version_type:
         description: 'Release Type'
@@ -25,113 +26,322 @@ on:
         default: false
 
 jobs:
-  publish:
+  prepare:
     runs-on: ubuntu-latest
+    outputs:
+      loaders: ${{ steps.loaders.outputs.loaders }}
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Resolve selected loaders
+        id: loaders
+        run: |
+          LOADERS_ARR=()
+          if [ "${{ github.event.inputs.publish_fabric }}" = "true" ]; then LOADERS_ARR+=("fabric"); fi
+          if [ "${{ github.event.inputs.publish_forge }}" = "true" ]; then LOADERS_ARR+=("forge"); fi
+          if [ "${{ github.event.inputs.publish_neoforge }}" = "true" ]; then LOADERS_ARR+=("neoforge"); fi
+
+          if [ ${#LOADERS_ARR[@]} -eq 0 ]; then
+            echo "::error::No loaders selected — enable at least one loader input before running."
+            exit 1
+          fi
+
+          LOADERS_JSON=$(printf '%s\n' "${LOADERS_ARR[@]}" | jq -R . | jq -sc .)
+          echo "loaders=$LOADERS_JSON" >> $GITHUB_OUTPUT
+          echo "::notice::Selected loaders: ${LOADERS_ARR[*]}"
+
+      - name: Prepare Modrinth body
+        run: |
+          cp README.md MODRINTH_BODY.md
+          sed -i 's|src=".github/Title with sub.png"|src="https://cdn.modrinth.com/data/cached_images/fc3a60516f4b9a25606c4bed70256fcda3018290.png"|' MODRINTH_BODY.md
+          sed -i 's|!\[\([^]]*\)\](\(.github/[^)]*\))|![\1](https://raw.githubusercontent.com/ansi-sudo/Slice/HEAD/\2)|g' MODRINTH_BODY.md
+          sed -i '/href="https:\/\/modrinth.com\/mod\/slice"/,+2d' MODRINTH_BODY.md
+          sed -i '/`Latest Slice version` doesn'\''t cite the latest \*\*\*published\*\*\* version/d' MODRINTH_BODY.md
+          sed -i '/^$/N;/^\n$/D' MODRINTH_BODY.md
+          echo "::notice::Modrinth body prepared from README.md"
+
+      - name: Update Modrinth description
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: |
+          PROJECT_ID="dbuOrodS"
+          BODY=$(cat MODRINTH_BODY.md)
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X PATCH "https://api.modrinth.com/v2/project/$PROJECT_ID" \
+            -H "Authorization: $MODRINTH_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n --arg body "$BODY" '{body: $body}')")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          if [ "$HTTP_CODE" != "204" ]; then
+            echo "::error::Failed to update project description (HTTP $HTTP_CODE)"
+            echo "$RESPONSE" | head -1
+            exit 1
+          fi
+          echo "::notice::Project description updated successfully"
+
+  build-and-publish:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        loader: ${{ fromJson(needs.prepare.outputs.loaders) }}
+      fail-fast: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Read Java version
+        id: java_version
+        run: |
+          JAVA_VERSION=$(grep "^java_version=" gradle.properties | cut -d'=' -f2 | tr -d '[:space:]')
+          echo "java_version=$JAVA_VERSION" >> $GITHUB_OUTPUT
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '21'
+          java-version: ${{ steps.java_version.outputs.java_version }}
 
-      - name: Make Gradle Executable
+      - name: Make Gradle executable
         run: chmod +x gradlew
 
-      - name: Build with Gradle
-        run: ./gradlew build
+      - name: Build ${{ matrix.loader }}
+        run: ./gradlew :${{ matrix.loader }}:build
 
-      - name: Prepare Modrinth Body (On-the-fly)
-        run: |
-          # Create a clean project description from README
-          cp README.md MODRINTH_BODY.md
-
-          # Remove the Modrinth badge link block
-          sed -i '/href="https:\/\/modrinth.com\/mod\/slice"/,+2d' MODRINTH_BODY.md
-
-          # Remove the specific version disclaimer line
-          sed -i '/`Latest Slice version` doesn'\''t cite the latest \*\*\*published\*\*\* version/d' MODRINTH_BODY.md
-
-          # Clean up formatting
-          sed -i '/^$/N;/^\n$/D' MODRINTH_BODY.md
-
-      - name: Process and Publish
+      - name: Publish ${{ matrix.loader }} to Modrinth
         env:
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
         run: |
-          # Hardcoded Project ID
           PROJECT_ID="dbuOrodS"
+          MC_VERSION=$(grep "^minecraft_version=" gradle.properties | cut -d'=' -f2 | tr -d '[:space:]')
+          MOD_VERSION=$(grep "^version=" gradle.properties | cut -d'=' -f2 | tr -d '[:space:]')
+          LOADER="${{ matrix.loader }}"
 
-          # Extract Minecraft version from gradle.properties
-          MC_VERSION=$(grep "minecraft_version" gradle.properties | cut -d'=' -f2)
-
-          # Loader Badge URLs for the Stitched Changelog
           COMMON_B="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy-minimal/available/github_vector.svg"
           NEO_B="https://github.com/intergrav/devins-badges/blob/8494ec1ac495cfb481dc7e458356325510933eb0/assets/cozy-minimal/supported/neoforge_vector.svg?raw=true"
           FORGE_B="https://badges.penpow.dev/badges/supported/forge/cozy-minimal.svg"
           FABRIC_B="https://badges.penpow.dev/badges/supported/fabric/cozy-minimal.svg"
           QUILT_B="https://badges.penpow.dev/badges/supported/quilt/cozy-minimal.svg"
 
-          # Determine which loaders to process
-          LOADERS=""
-          if [ "${{ github.event.inputs.publish_fabric }}" = "true" ]; then LOADERS="$LOADERS fabric"; fi
-          if [ "${{ github.event.inputs.publish_forge }}" = "true" ]; then LOADERS="$LOADERS forge"; fi
-          if [ "${{ github.event.inputs.publish_neoforge }}" = "true" ]; then LOADERS="$LOADERS neoforge"; fi
+          # Keep the common changelog's own heading levels exactly as written —
+          # it is the reference hierarchy. Then shift the loader-specific
+          # changelog's headings so its shallowest heading picks up one level
+          # deeper than the deepest heading used in the common changelog,
+          # preserving the loader changelog's own internal hierarchy.
+          #
+          # e.g. common uses  # .. ##   (max level 2)
+          #      loader uses  # .. ##   (min level 1)
+          #      -> loader shift = (2 + 1) - 1 = 2
+          #      -> loader becomes ### .. ####
+          cat > /tmp/heading_levels.py << 'PYEOF'
+          import re, sys
 
-          for LOADER in $LOADERS; do
-            # Build the Stitched Changelog (Common + Loader Specific)
-            echo "## <img width=\"20\" src=\"$COMMON_B\"> Common and General" > STITCHED_CHANGELOG.md
-            cat common/CHANGELOG.md >> STITCHED_CHANGELOG.md
-            echo -e "\n" >> STITCHED_CHANGELOG.md
+          def heading_levels(text):
+              levels = []
+              for l in text.splitlines():
+                  m = re.match(r'^(#{1,6})\s', l)
+                  if m:
+                      levels.append(len(m.group(1)))
+              return levels
 
-            ACTUAL_LOADERS="$LOADER"
-            DEPS=""
+          if __name__ == '__main__':
+              mode = sys.argv[1]  # "max" or "min"
+              levels = heading_levels(sys.stdin.read())
+              if not levels:
+                  print(0)
+              elif mode == 'max':
+                  print(max(levels))
+              else:
+                  print(min(levels))
+          PYEOF
 
-            if [ "$LOADER" = "neoforge" ]; then
-                echo "## <img width=\"20\" src=\"$NEO_B\"> NeoForge" >> STITCHED_CHANGELOG.md
-            elif [ "$LOADER" = "forge" ]; then
-                echo "## <img width=\"20\" src=\"$FORGE_B\"> Forge" >> STITCHED_CHANGELOG.md
-            elif [ "$LOADER" = "fabric" ]; then
-                echo "## <img width=\"20\" src=\"$FABRIC_B\"> Fabric / <img width=\"20\" src=\"$QUILT_B\"> Quilt" >> STITCHED_CHANGELOG.md
-                ACTUAL_LOADERS="fabric quilt"
-                # Fabric-only dependencies as per your screenshot
-                DEPS="-Pdependencies=fabric-api:required,cloth-config:embedded,modmenu:optional"
+          cat > /tmp/shift_headings.py << 'PYEOF'
+          import re, sys
+
+          def shift_headings(text, shift):
+              out = []
+              for l in text.splitlines():
+                  m = re.match(r'^(#{1,6})(\s.*)$', l)
+                  if m:
+                      new_level = max(1, min(6, len(m.group(1)) + shift))
+                      out.append('#' * new_level + m.group(2))
+                  else:
+                      out.append(l)
+              return '\n'.join(out)
+
+          if __name__ == '__main__':
+              shift = int(sys.argv[1])
+              sys.stdout.write(shift_headings(sys.stdin.read(), shift))
+          PYEOF
+
+          {
+            COMMON_RAW=$(cat common/CHANGELOG.md)
+            COMMON_CONTENT="$COMMON_RAW"
+            if [ -n "$COMMON_CONTENT" ]; then
+              echo "## <img width=\"20\" src=\"$COMMON_B\"> Common and General"
+              echo "$COMMON_CONTENT"
+              echo ""
+              echo ""
             fi
 
-            cat $LOADER/CHANGELOG.md >> STITCHED_CHANGELOG.md
+            COMMON_MAX_LEVEL=$(echo "$COMMON_RAW" | python3 /tmp/heading_levels.py max)
+            if [ "$COMMON_MAX_LEVEL" -eq 0 ]; then
+              COMMON_MAX_LEVEL=2  # fallback: nest under the "##" section header level
+            fi
 
-            # Publish via Gradle
-            ./gradlew :$LOADER:modrinth \
-              -PmodrinthId="$PROJECT_ID" \
-              -PversionName="${{ github.event.inputs.version_name }}" \
-              -PversionType="${{ github.event.inputs.version_type }}" \
-              -Pchangelog="$(cat STITCHED_CHANGELOG.md)" \
-              -Pbody="$(cat MODRINTH_BODY.md)" \
-              -PmcVersion="$MC_VERSION" \
-              -PmodrinthLoaders="$ACTUAL_LOADERS" \
-              $DEPS
+            LOADER_RAW=$(cat $LOADER/CHANGELOG.md)
+            LOADER_MIN_LEVEL=$(echo "$LOADER_RAW" | python3 /tmp/heading_levels.py min)
+            if [ "$LOADER_MIN_LEVEL" -eq 0 ]; then
+              LOADER_SHIFT=0
+            else
+              LOADER_SHIFT=$((COMMON_MAX_LEVEL + 1 - LOADER_MIN_LEVEL))
+            fi
 
-            # Clear the local loader changelog
-            echo "" > $LOADER/CHANGELOG.md
-          done
+            LOADER_CONTENT=$(echo "$LOADER_RAW" | python3 /tmp/shift_headings.py "$LOADER_SHIFT")
+            if [ -n "$LOADER_CONTENT" ]; then
+              if [ "$LOADER" = "neoforge" ]; then
+                echo "## <img width=\"20\" src=\"$NEO_B\"> NeoForge"
+              elif [ "$LOADER" = "forge" ]; then
+                echo "## <img width=\"20\" src=\"$FORGE_B\"> Forge"
+              elif [ "$LOADER" = "fabric" ]; then
+                echo "## <img width=\"20\" src=\"$FABRIC_B\"> Fabric / <img width=\"20\" src=\"$QUILT_B\"> Quilt"
+              fi
+              echo "$LOADER_CONTENT"
+            fi
+          } > STITCHED_CHANGELOG.md
 
-          # Clear the common changelog
-          echo "" > common/CHANGELOG.md
+          CHANGELOG=$(cat STITCHED_CHANGELOG.md)
 
-      - name: Commit and Push Changes
+          if [ "$LOADER" = "fabric" ]; then
+            LOADERS_JSON='["fabric","quilt"]'
+            DEPS_JSON='[
+              {"project_id":"P7dR8mSH","version_type":"required","dependency_type":"required"},
+              {"project_id":"9s6osm5g","version_type":"required","dependency_type":"optional"},
+              {"project_id":"mOgUt4GM","version_type":"required","dependency_type":"optional"}
+            ]'
+          elif [ "$LOADER" = "forge" ]; then
+            LOADERS_JSON='["forge"]'
+            DEPS_JSON='[]'
+          elif [ "$LOADER" = "neoforge" ]; then
+            LOADERS_JSON='["neoforge"]'
+            DEPS_JSON='[]'
+          fi
+
+          JAR_PATH=$(find $LOADER/build/libs -name "*.jar" \
+            ! -name "*-sources*" \
+            ! -name "*-javadoc*" \
+            ! -name "*-dev*" \
+            | head -1)
+
+          if [ -z "$JAR_PATH" ]; then
+            echo "::error::No jar found for $LOADER in $LOADER/build/libs"
+            exit 1
+          fi
+
+          echo "Using jar: $JAR_PATH"
+
+          VERSION_DATA=$(jq -n \
+            --arg name "${{ github.event.inputs.version_name }}" \
+            --arg version_number "$MOD_VERSION" \
+            --arg version_type "${{ github.event.inputs.version_type }}" \
+            --arg changelog "$CHANGELOG" \
+            --argjson loaders "$LOADERS_JSON" \
+            --argjson deps "$DEPS_JSON" \
+            --arg mc_version "$MC_VERSION" \
+            --arg project_id "$PROJECT_ID" \
+            --arg filename "$(basename $JAR_PATH)" \
+            '{
+              name: $name,
+              version_number: $version_number,
+              version_type: $version_type,
+              changelog: $changelog,
+              loaders: $loaders,
+              dependencies: $deps,
+              game_versions: [$mc_version],
+              project_id: $project_id,
+              file_parts: [$filename],
+              primary_file: $filename,
+              featured: false
+            }')
+
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST "https://api.modrinth.com/v2/version" \
+            -H "Authorization: $MODRINTH_TOKEN" \
+            -F "data=$VERSION_DATA" \
+            -F "$(basename $JAR_PATH)=@$JAR_PATH")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY_RESP=$(echo "$RESPONSE" | head -1)
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::Modrinth API returned HTTP $HTTP_CODE for $LOADER"
+            echo "$BODY_RESP"
+            exit 1
+          fi
+
+          echo "::notice::$LOADER published successfully"
+
+  finalize:
+    needs: [prepare, build-and-publish]
+    if: success()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create version tag
         env:
           GIT_USER: ${{ secrets.GIT_USER_NAME }}
           GIT_EMAIL: ${{ secrets.GIT_USER_EMAIL }}
         run: |
+          MOD_VERSION=$(grep "^version=" gradle.properties | cut -d'=' -f2 | tr -d '[:space:]')
+          BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+          if [ "$BRANCH_NAME" = "HEAD" ]; then
+            BRANCH_NAME="${{ github.ref_name }}"
+          fi
+          TAG_NAME="${BRANCH_NAME}/${MOD_VERSION}"
+
+          git config --global user.name "$GIT_USER"
+          git config --global user.email "$GIT_EMAIL"
+          git tag "$TAG_NAME"
+          git push origin "$TAG_NAME"
+          echo "::notice::Tag $TAG_NAME created and pushed successfully"
+
+      - name: Clear changelogs
+        run: |
+          for LOADER in $(echo '${{ needs.prepare.outputs.loaders }}' | jq -r '.[]'); do
+            truncate -s 0 $LOADER/CHANGELOG.md
+            echo "::notice::Cleared $LOADER changelog"
+          done
+          truncate -s 0 common/CHANGELOG.md
+          echo "::notice::Cleared common changelog"
+
+      - name: Commit cleared changelogs
+        env:
+          GIT_USER: ${{ secrets.GIT_USER_NAME }}
+          GIT_EMAIL: ${{ secrets.GIT_USER_EMAIL }}
+        run: |
+          MOD_VERSION=$(grep "^version=" gradle.properties | cut -d'=' -f2 | tr -d '[:space:]')
           git config --global user.name "$GIT_USER"
           git config --global user.email "$GIT_EMAIL"
           git add .
-          if ! git diff --staged --quiet; then
-            git commit -m "Chore: clear changelogs for version ${{ github.event.inputs.version_name }} [skip ci]"
-            git push origin main
+          if git diff --staged --quiet; then
+            echo "::notice::No changelog changes to commit"
+          else
+            git commit -m "[CHORE] Clear changelogs for version $MOD_VERSION"
+            git push origin HEAD
+            echo "::notice::Changelogs committed and pushed"
           fi
