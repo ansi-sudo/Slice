@@ -1,1 +1,0 @@
-- Add a keybind to swap the hovered slot's item to the off-hand slot [#3](https://github.com/ansi-sudo/Slice/issues/3)
