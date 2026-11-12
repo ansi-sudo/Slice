@@ -30,7 +30,7 @@
 [Click to watch the trailer/demo](https://www.youtube.com/watch?v=kq3pwFCv4ZM)
 
 ## Supported Versions
-> ✅ - Supported, ❌ - Unsupported, 🔍 - Planned / In development
+> ✅ - Supported, ❌ - Unsupported, 🔍 - Planned / In development, ⭐ - Long-term maintained
 <br> Minimum loader versions are in the same order as the loaders in the `Loaders` column. <br> `Latest Slice version` doesn't refer to the latest ***published*** version. Check the [Modrinth page](https://modrinth.com/mod/slice) for the latest available version.<br> Main development currently resides on version **`26.1.2`**. Why? idk
 
 <table>
@@ -102,7 +102,7 @@
     <tr><td>1.21.4</td> <td>❌</td><td></td><td></td><td></td></tr>
     <tr><td>1.21.3</td> <td>❌</td><td></td><td></td><td></td></tr>
     <tr><td>1.21.2</td> <td>❌</td><td></td><td></td><td></td></tr>
-    <tr><td>1.21.1</td> <td>✅</td>
+    <tr><td>1.21.1</td> <td>⭐</td>
       <td>
         <img width="35" src="https://github.com/intergrav/devins-badges/blob/8494ec1ac495cfb481dc7e458356325510933eb0/assets/cozy-minimal/supported/neoforge_vector.svg?raw=true"> 
         <img width="35" src="https://badges.penpow.dev/badges/supported/forge/cozy-minimal.svg"> 
