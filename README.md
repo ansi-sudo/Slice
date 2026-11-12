@@ -102,7 +102,7 @@
     <tr><td>1.21.4</td> <td>❌</td><td></td><td></td><td></td></tr>
     <tr><td>1.21.3</td> <td>❌</td><td></td><td></td><td></td></tr>
     <tr><td>1.21.2</td> <td>❌</td><td></td><td></td><td></td></tr>
-    <tr><td>1.21.1</td> <td>✅</td>
+    <tr><td>1.21.1</td> <td>⭐</td>
       <td>
         <img width="35" src="https://github.com/intergrav/devins-badges/blob/8494ec1ac495cfb481dc7e458356325510933eb0/assets/cozy-minimal/supported/neoforge_vector.svg?raw=true"> 
         <img width="35" src="https://badges.penpow.dev/badges/supported/forge/cozy-minimal.svg"> 
@@ -152,7 +152,7 @@
     <tr><td>1.9.4</td>  <td>❌</td><td></td><td></td><td></td></tr>
     <tr><td>1.9</td>    <td>❌</td><td></td><td></td><td></td></tr>
     <tr><td>1.8.9</td>    
-        <td>>⭐</td>
+        <td>✅</td>
         <td><img width="35" src="https://badges.penpow.dev/badges/supported/forge/cozy-minimal.svg"> </td>
         <td><code>11.15.1.2318</code></td>
         <td><code>0.2.0</code></td>
