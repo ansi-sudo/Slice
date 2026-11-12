@@ -30,7 +30,7 @@
 [Click to watch the trailer/demo](https://www.youtube.com/watch?v=kq3pwFCv4ZM)
 
 ## Supported Versions
-> ✅ - Supported, ❌ - Unsupported, 🔍 - Planned / In development
+> ✅ - Supported, ❌ - Unsupported, 🔍 - Planned / In development, ⭐ - Long-term maintained
 <br> Minimum loader versions are in the same order as the loaders in the `Loaders` column. <br> `Latest Slice version` doesn't refer to the latest ***published*** version. Check the [Modrinth page](https://modrinth.com/mod/slice) for the latest available version.<br> Main development currently resides on version **`26.1.2`**. Why? idk
 
 <table>
