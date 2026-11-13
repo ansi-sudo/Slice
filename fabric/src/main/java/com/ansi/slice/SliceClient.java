@@ -38,7 +38,7 @@ public class SliceClient implements ClientModInitializer {
 
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (client.screen == null && !RadialMenuHandler.canHandleKeyBind) {
+            if (client.gui.screen() == null && !RadialMenuHandler.canHandleKeyBind) {
                 RadialMenuHandler.canHandleKeyBind = true;
                 renderer = new RadialMenuRenderer();
             }

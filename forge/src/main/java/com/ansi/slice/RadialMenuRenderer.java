@@ -70,8 +70,6 @@ public class RadialMenuRenderer {
 
         renderVisibleSlots(graphics);
 
-        Constants.MINECRAFT.renderBuffers().bufferSource().endBatch();
-
         hasRenderedOnce = true;
     }
 
