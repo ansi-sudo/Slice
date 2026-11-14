@@ -31,7 +31,7 @@
 
 ## Supported Versions
 > ✅ - Supported, ❌ - Unsupported, 🔍 - Planned / In development, ⭐ - Long-term maintained
-<br> Minimum loader versions are in the same order as the loaders in the `Loaders` column. <br> `Latest Slice version` doesn't refer to the latest ***published*** version. Check the [Modrinth page](https://modrinth.com/mod/slice) for the latest available version.<br> Main development currently resides on version **`26.1.2`**. Why? idk
+<br> Minimum loader versions are in the same order as the loaders in the `Loaders` column. <br> `Latest Slice version` doesn't refer to the latest ***published*** version. Check the [Modrinth page](https://modrinth.com/mod/slice) for the latest available version.<br> Main development currently resides on version **`26.2`**. Why? idk
 
 <table>
     <th>Version</th>
@@ -39,6 +39,15 @@
     <th>Loaders</th>
     <th>Minimum required version</th>
     <th>Latest Slice version</th>
+    <tr><td>26.2</td>  <td>✅</td>
+        <td>
+          <img width="35" src="https://github.com/intergrav/devins-badges/blob/8494ec1ac495cfb481dc7e458356325510933eb0/assets/cozy-minimal/supported/neoforge_vector.svg?raw=true"> 
+          <img width="35" src="https://badges.penpow.dev/badges/supported/forge/cozy-minimal.svg"> 
+          <img width="35" src="https://badges.penpow.dev/badges/supported/fabric/cozy-minimal.svg">
+        </td>
+        <td><code>26.2.0.0-beta</code>, <code>65.0.0</code>, <code>0.18.4</code></td>
+        <td><code>1.1.0</code></td>
+    </tr>
     <tr><td>26.1.2</td>  <td>✅</td>
         <td>
           <img width="35" src="https://github.com/intergrav/devins-badges/blob/8494ec1ac495cfb481dc7e458356325510933eb0/assets/cozy-minimal/supported/neoforge_vector.svg?raw=true"> 
@@ -185,6 +194,7 @@
   <table>
     <th>Minecraft version</th>
     <th>Minimum FabricAPI version</th>
+    <tr><td>26.2</td><td><code>0.152.1+26.2</code></td></tr>
     <tr><td>26.1.2</td><td><code>0.145.4+26.1.2</code></td></tr>
     <tr><td>26.1.1</td><td><code>0.144.0+26.1</code></td></tr>
     <tr><td>26.1</td><td><code>0.144.0+26.1</code></td></tr>
